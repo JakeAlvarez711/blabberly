@@ -1,25 +1,62 @@
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
-function App() {
+import FeedPage from "./pages/FeedPage";
+import ProfilePage from "./pages/ProfilePage";
+import CreatePostPage from "./pages/CreatePostPage";
+import PublicProfilePage from "./pages/PublicProfilePage";
+import PostPage from "./pages/PostPage";
+
+import BottomNav from "./components/Navigation/BottomNav";
+import AuthGate from "./components/Auth/AuthGate";
+
+function AppShell() {
+  const location = useLocation();
+
+  // Hide BottomNav on fullscreen viewer routes
+  const hideBottomNav =
+    location.pathname.startsWith("/p/"); // add more later if needed
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AuthGate>
+      <div style={styles.app}>
+        <div style={styles.content}>
+          <Routes>
+            <Route path="/" element={<FeedPage />} />
+            <Route path="/create" element={<CreatePostPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+
+            {/* Public profiles */}
+            <Route path="/u/:handle" element={<PublicProfilePage />} />
+
+            {/* Single post viewer (fullscreen) */}
+            <Route path="/p/:postId" element={<PostPage />} />
+          </Routes>
+        </div>
+
+        {!hideBottomNav && <BottomNav />}
+      </div>
+    </AuthGate>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
+    </BrowserRouter>
+  );
+}
+
+const styles = {
+  app: {
+    height: "100vh",
+    width: "100vw",
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+  },
+  content: {
+    flex: 1,
+    overflow: "hidden",
+  },
+};
