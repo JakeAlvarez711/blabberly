@@ -1,21 +1,19 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import FeedPage from "./pages/FeedPage";
+import ExplorePage from "./pages/ExplorePage";
 import ProfilePage from "./pages/ProfilePage";
 import CreatePostPage from "./pages/CreatePostPage";
 import PublicProfilePage from "./pages/PublicProfilePage";
 import PostPage from "./pages/PostPage";
+import AuthPage from "./pages/AuthPage";
+import OnboardingTasteProfile from "./pages/OnboardingTasteProfile";
+import OnboardingProfileSetup from "./pages/OnboardingProfileSetup";
+import FineTunePreferences from "./pages/FineTunePreferences";
 
-import BottomNav from "./components/Navigation/BottomNav";
 import AuthGate from "./components/Auth/AuthGate";
 
 function AppShell() {
-  const location = useLocation();
-
-  // Hide BottomNav on fullscreen viewer routes
-  const hideBottomNav =
-    location.pathname.startsWith("/p/"); // add more later if needed
-
   return (
     <AuthGate>
       <div style={styles.app}>
@@ -30,10 +28,17 @@ function AppShell() {
 
             {/* Single post viewer (fullscreen) */}
             <Route path="/p/:postId" element={<PostPage />} />
+
+            {/* Auth & Onboarding */}
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/onboarding/profile" element={<OnboardingProfileSetup />} />
+            <Route path="/onboarding/taste" element={<OnboardingTasteProfile />} />
+            <Route path="/onboarding/finetune" element={<FineTunePreferences />} />
+
+            {/* Explore */}
+            <Route path="/explore" element={<ExplorePage />} />
           </Routes>
         </div>
-
-        {!hideBottomNav && <BottomNav />}
       </div>
     </AuthGate>
   );

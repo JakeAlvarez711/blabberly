@@ -6,7 +6,7 @@ import { createPost } from "../data/postService";
 
 function CreatePostPage() {
   const navigate = useNavigate();
-  const { user, ready } = useAuth();
+  const { user, ready, userDoc } = useAuth();
 
   const [dish, setDish] = useState("");
   const [restaurant, setRestaurant] = useState("");
@@ -33,6 +33,7 @@ function CreatePostPage() {
         videoURL,
         price,
         distance,
+        city: userDoc?.homeCity || "",
       });
 
       navigate("/"); // back to feed

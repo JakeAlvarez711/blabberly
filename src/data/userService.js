@@ -29,22 +29,20 @@ export async function ensureUserDoc(user) {
   if (!user?.uid) return;
 
   const ref = doc(db, "users", user.uid);
+  const snap = await getDoc(ref);
 
-  await setDoc(
-    ref,
-    {
+  if (!snap.exists()) {
+    // First time — create minimal doc
+    await setDoc(ref, {
       uid: user.uid,
-      isAnonymous: !!user.isAnonymous,
-      providerId: user.providerData?.[0]?.providerId || "anonymous",
-
-      // "createdAt" can be written on first create; merge won't overwrite existing
       createdAt: serverTimestamp(),
-
-      lastSeenAt: serverTimestamp(),
+      onboardingCompleted: false,
       updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+    });
+  } else {
+    // Returning user — just bump lastSeenAt
+    await setDoc(ref, { lastSeenAt: serverTimestamp() }, { merge: true });
+  }
 }
 
 /* ----------------------------
@@ -67,6 +65,9 @@ export async function getPublicUser(uid) {
     bio: data.bio || null,
     reputation: typeof data.reputation === "number" ? data.reputation : 0,
     activity: typeof data.activity === "number" ? data.activity : 0,
+    followersCount: typeof data.followersCount === "number" ? data.followersCount : 0,
+    followingCount: typeof data.followingCount === "number" ? data.followingCount : 0,
+    location: data.location || null,
   };
 }
 
@@ -161,7 +162,7 @@ export async function clearHandle(uid) {
 /* ----------------------------
    Update profile fields
 ----------------------------- */
-export async function updateProfile(uid, { displayName, bio, photoURL } = {}) {
+export async function updateProfile(uid, { displayName, bio, photoURL, location, homeCity, defaultRadiusMi, phoneNumber } = {}) {
   if (!uid) throw new Error("Missing uid");
 
   const ref = doc(db, "users", uid);
@@ -173,11 +174,27 @@ export async function updateProfile(uid, { displayName, bio, photoURL } = {}) {
   }
 
   if (bio !== undefined) {
-    patch.bio = String(bio).trim().slice(0, 160);
+    patch.bio = String(bio).trim().slice(0, 80);
   }
 
   if (photoURL !== undefined) {
     patch.photoURL = photoURL || null;
+  }
+
+  if (location !== undefined) {
+    patch.location = location ? String(location).trim().slice(0, 100) : null;
+  }
+
+  if (homeCity !== undefined) {
+    patch.homeCity = homeCity ? String(homeCity).trim().slice(0, 100) : null;
+  }
+
+  if (defaultRadiusMi !== undefined) {
+    patch.defaultRadiusMi = typeof defaultRadiusMi === "number" ? defaultRadiusMi : null;
+  }
+
+  if (phoneNumber !== undefined) {
+    patch.phoneNumber = phoneNumber ? String(phoneNumber).trim() : null;
   }
 
   await updateDoc(ref, patch);

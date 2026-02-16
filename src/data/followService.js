@@ -1,6 +1,6 @@
 // src/data/followService.js
 import { db } from "../firebaseConfig";
-import { doc, getDoc, runTransaction, serverTimestamp } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, runTransaction, serverTimestamp } from "firebase/firestore";
 
 /**
  * Schema:
@@ -19,6 +19,17 @@ import { doc, getDoc, runTransaction, serverTimestamp } from "firebase/firestore
 
 function safeInt(v, fallback = 0) {
   return Number.isInteger(v) ? v : fallback;
+}
+
+export async function getFollowingIds(uid) {
+  if (!uid) return [];
+  try {
+    const snap = await getDocs(collection(db, "users", uid, "following"));
+    return snap.docs.map((d) => d.id);
+  } catch (e) {
+    console.error("Failed to load following list:", e);
+    return [];
+  }
 }
 
 export async function isFollowing(viewerUid, targetUid) {

@@ -1,0 +1,259 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ----------------------------
+       Helpers
+    ----------------------------- */
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // ✅ Block helpers
+    function blocks(a, b) {
+      return exists(/databases/$(database)/documents/users/$(a)/blocks/$(b));
+    }
+
+    function blockedEitherWay(a, b) {
+      return blocks(a, b) || blocks(b, a);
+    }
+
+    /* ----------------------------
+       POSTS (base doc)
+       - Read: public, BUT signed-in users can't read if blocked either way
+       - Create: signed in, must set authorId = self
+       - Update: only allow counter/timestamp fields
+       - Delete: only author
+    ----------------------------- */
+    match /posts/{postId} {
+
+      // ✅ HARD BLOCK READ
+      allow read: if true
+        && !(signedIn() && blockedEitherWay(request.auth.uid, resource.data.authorId));
+
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid;
+
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['likes', 'commentsCount', 'updatedAt']);
+
+      allow delete: if signedIn()
+        && resource.data.authorId == request.auth.uid;
+
+      /* ----------------------------
+         LIKES subcollection
+         posts/{postId}/likes/{uid}
+      ----------------------------- */
+      match /likes/{uid} {
+
+        allow read: if true
+          && !(signedIn() && blockedEitherWay(
+            request.auth.uid,
+            get(/databases/$(database)/documents/posts/$(postId)).data.authorId
+          ));
+
+        allow create: if isOwner(uid)
+          && request.resource.data.uid == uid
+          && !blockedEitherWay(
+            uid,
+            get(/databases/$(database)/documents/posts/$(postId)).data.authorId
+          );
+
+        allow delete: if isOwner(uid);
+
+        allow update: if false;
+      }
+
+      /* ----------------------------
+         COMMENTS subcollection
+         posts/{postId}/comments/{commentId}
+      ----------------------------- */
+      match /comments/{commentId} {
+
+        allow read: if true
+          && !(signedIn() && blockedEitherWay(
+            request.auth.uid,
+            get(/databases/$(database)/documents/posts/$(postId)).data.authorId
+          ));
+
+        allow create: if signedIn()
+          && request.resource.data.userId == request.auth.uid
+          && !blockedEitherWay(
+            request.auth.uid,
+            get(/databases/$(database)/documents/posts/$(postId)).data.authorId
+          );
+
+        allow update: if signedIn()
+          && resource.data.userId == request.auth.uid;
+
+        allow delete: if signedIn()
+          && resource.data.userId == request.auth.uid;
+      }
+    }
+
+    /* ----------------------------
+       USERS
+       - Read: public profiles, BUT signed-in users can't read if blocked either way
+       - Owner can create/delete
+       - Update: owner can update profile fields only,
+         OR signed-in users can bump follow counters ±1
+    ----------------------------- */
+    match /users/{uid} {
+
+      // ✅ HARD BLOCK READ (profiles)
+      allow read: if true
+        && !(signedIn() && blockedEitherWay(request.auth.uid, uid));
+
+      allow create: if isOwner(uid);
+
+      allow delete: if isOwner(uid);
+
+      // ✅ Owner update: restricted to profile fields only
+      // ✅ Counter update: non-owner can bump followersCount/followingCount ±1
+      allow update: if
+        (
+          isOwner(uid)
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'handle',
+              'displayName',
+              'photoURL',
+              'bio',
+              'phoneNumber',
+              'homeCity',
+              'defaultRadiusMi',
+              'onboardingCompleted',
+              'onboardingCompletedAt',
+              'tastePrefs',
+              'fineTune',
+              'followersCount',
+              'followingCount',
+              'updatedAt'
+            ])
+        )
+        ||
+        (
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['followersCount', 'followingCount', 'updatedAt'])
+          && request.resource.data.followersCount is int
+          && request.resource.data.followingCount is int
+          && (request.resource.data.followersCount - resource.data.followersCount) in [-1, 0, 1]
+          && (request.resource.data.followingCount - resource.data.followingCount) in [-1, 0, 1]
+        );
+
+      /* ----------------------------
+         BLOCKS: users/{uid}/blocks/{blockedUid}
+      ----------------------------- */
+      match /blocks/{blockedUid} {
+        allow read: if isOwner(uid) || (signedIn() && request.auth.uid == blockedUid);
+
+        allow create: if isOwner(uid)
+          && request.resource.data.blockedUid == blockedUid
+          && request.resource.data.blockedUid is string;
+
+        allow delete: if isOwner(uid);
+
+        allow update: if false;
+      }
+
+      /* ----------------------------
+         FOLLOWING: users/{uid}/following/{targetUid}
+      ----------------------------- */
+      match /following/{targetUid} {
+        allow read: if isOwner(uid);
+
+        allow create: if isOwner(uid)
+          && request.resource.data.uid == uid
+          && request.resource.data.targetUid == targetUid
+          && !blockedEitherWay(uid, targetUid);
+
+        allow delete: if isOwner(uid);
+
+        allow update: if false;
+      }
+
+      /* ----------------------------
+         FOLLOWERS: users/{uid}/followers/{followerUid}
+      ----------------------------- */
+      match /followers/{followerUid} {
+        allow read: if isOwner(uid);
+
+        allow create: if signedIn()
+          && request.auth.uid == followerUid
+          && !blockedEitherWay(followerUid, uid)
+          && (
+            (request.resource.data.uid == uid
+              && request.resource.data.followerUid == followerUid)
+            ||
+            (request.resource.data.uid == followerUid
+              && request.resource.data.targetUid == uid)
+          );
+
+        allow delete: if signedIn()
+          && request.auth.uid == followerUid;
+
+        allow update: if false;
+      }
+
+      /* ----------------------------
+         TASTE VECTOR: users/{uid}/tasteVector/{docId}
+      ----------------------------- */
+      match /tasteVector/{docId} {
+        allow read: if isOwner(uid);
+        allow write: if isOwner(uid);
+      }
+
+      /* ----------------------------
+         SAVED PLACES: users/{uid}/savedPlaces/{placeId}
+      ----------------------------- */
+      match /savedPlaces/{placeId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && request.resource.data.placeId == placeId;
+        allow delete: if isOwner(uid);
+        allow update: if false;
+      }
+
+      /* ----------------------------
+         EXPLORE EXPOSURE: users/{uid}/exploreExposure/{docId}
+      ----------------------------- */
+      match /exploreExposure/{docId} {
+        allow read: if isOwner(uid);
+        allow write: if isOwner(uid);
+      }
+    }
+
+    /* ----------------------------
+       HANDLES (for unique usernames)
+    ----------------------------- */
+    match /handles/{handle} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+
+      allow delete: if signedIn()
+        && resource.data.uid == request.auth.uid;
+
+      allow update: if false;
+    }
+
+    /* ----------------------------
+       PLACES (server/admin only)
+    ----------------------------- */
+    match /places/{placeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /test/{docId} {
+      allow read, write: if false;
+    }
+  }
+}

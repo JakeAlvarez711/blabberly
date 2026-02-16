@@ -23,6 +23,7 @@ export async function createPost(uid, payload = {}) {
 
   const price = toNumberOrNull(payload.price);
   const distance = toNumberOrNull(payload.distance);
+  const city = String(payload.city || "").trim() || null;
 
   const docRef = await addDoc(collection(db, "posts"), {
     authorId: uid, // ✅ required by your rules
@@ -31,6 +32,7 @@ export async function createPost(uid, payload = {}) {
     videoURL,
     price, // number | null
     distance, // number | null
+    city, // string | null — used for LOCAL feed filtering
 
     likes: 0,
     commentsCount: 0,

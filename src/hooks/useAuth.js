@@ -1,30 +1,53 @@
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
-import { auth } from "../firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, onSnapshot } from "firebase/firestore";
+import { auth, db } from "../firebaseConfig";
 
 export function useAuth() {
   const [user, setUser] = useState(null);
-  const [ready, setReady] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const [userDoc, setUserDoc] = useState(null);
+  const [userDocReady, setUserDocReady] = useState(false);
 
+  // Firebase Auth listener
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      try {
-        if (!u) {
-          const cred = await signInAnonymously(auth);
-          setUser(cred.user);
-        } else {
-          setUser(u);
-        }
-      } catch (e) {
-        console.error("Auth init failed:", e);
-        setUser(null);
-      } finally {
-        setReady(true);
-      }
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u || null);
+      setAuthReady(true);
     });
 
     return () => unsub();
   }, []);
 
-  return { user, uid: user?.uid || null, ready };
+  // Firestore user doc listener (real-time)
+  useEffect(() => {
+    if (!user?.uid) {
+      setUserDoc(null);
+      setUserDocReady(true);
+      return;
+    }
+
+    const unsub = onSnapshot(
+      doc(db, "users", user.uid),
+      (snap) => {
+        setUserDoc(snap.exists() ? snap.data() : null);
+        setUserDocReady(true);
+      },
+      (err) => {
+        console.error("User doc listener error:", err);
+        setUserDoc(null);
+        setUserDocReady(true);
+      }
+    );
+
+    return () => unsub();
+  }, [user?.uid]);
+
+  return {
+    user,
+    uid: user?.uid || null,
+    ready: authReady && userDocReady,
+    onboardingCompleted: userDoc?.onboardingCompleted === true,
+    userDoc,
+  };
 }

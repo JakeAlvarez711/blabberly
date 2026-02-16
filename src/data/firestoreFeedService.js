@@ -114,6 +114,151 @@ export async function loadFeedFromFirestore({
 }
 
 /* ---------------------------------
+   Feed: load LOCAL posts (filter by city)
+   - loads posts where city matches the user's homeCity
+   - same blocked-user filtering and like-check logic as loadFeedFromFirestore
+---------------------------------- */
+export async function loadLocalFeed({
+  uid = null,
+  city = null,
+  blockedIds = [],
+  limitCount = 50,
+} = {}) {
+  if (!city) return [];
+
+  const blocked = normalizeIdList(blockedIds);
+
+  const constraints = [
+    where("city", "==", city),
+    orderBy("createdAt", "desc"),
+    limit(limitCount),
+  ];
+
+  let snap = null;
+  try {
+    const q = query(collection(db, "posts"), ...constraints);
+    snap = await getDocs(q);
+  } catch (e) {
+    if (isPermissionDenied(e)) return [];
+    throw e;
+  }
+
+  const docs = blocked.length
+    ? snap.docs.filter((d) => !blocked.includes(d.data()?.authorId))
+    : snap.docs;
+
+  const posts = await Promise.all(
+    docs.map(async (d) => {
+      const data = d.data();
+      const postId = d.id;
+
+      let liked = false;
+      if (uid) {
+        try {
+          const likeSnap = await getDoc(doc(db, "posts", postId, "likes", uid));
+          liked = likeSnap.exists();
+        } catch (e) {
+          liked = false;
+        }
+      }
+
+      return {
+        ...data,
+        _docId: postId,
+        likes: safeNumber(data.likes, 0),
+        commentsCount: safeNumber(data.commentsCount, 0),
+        liked,
+      };
+    })
+  );
+
+  return posts;
+}
+
+/* ---------------------------------
+   Feed: load FRIENDS posts (filter by followingIds)
+   - loads posts where authorId is in the user's following list
+   - Firestore `in` operator limited to 30 values — batches if needed
+   - same blocked-user filtering and like-check logic
+---------------------------------- */
+export async function loadFriendsFeed({
+  uid = null,
+  followingIds = [],
+  blockedIds = [],
+  limitCount = 50,
+} = {}) {
+  if (!followingIds.length) return [];
+
+  const blocked = normalizeIdList(blockedIds);
+
+  // Filter out blocked users from the followingIds before querying
+  const filtered = blocked.length
+    ? followingIds.filter((id) => !blocked.includes(id))
+    : followingIds;
+
+  if (!filtered.length) return [];
+
+  // Firestore `in` supports up to 30 values — batch if needed
+  const BATCH_SIZE = 30;
+  const batches = [];
+  for (let i = 0; i < filtered.length; i += BATCH_SIZE) {
+    batches.push(filtered.slice(i, i + BATCH_SIZE));
+  }
+
+  let allDocs = [];
+  for (const batch of batches) {
+    try {
+      const q = query(
+        collection(db, "posts"),
+        where("authorId", "in", batch),
+        orderBy("createdAt", "desc"),
+        limit(limitCount)
+      );
+      const snap = await getDocs(q);
+      allDocs = allDocs.concat(snap.docs);
+    } catch (e) {
+      if (isPermissionDenied(e)) continue;
+      throw e;
+    }
+  }
+
+  // Sort all docs by createdAt desc and take limitCount
+  allDocs.sort((a, b) => {
+    const aTime = a.data()?.createdAt?.toMillis?.() || 0;
+    const bTime = b.data()?.createdAt?.toMillis?.() || 0;
+    return bTime - aTime;
+  });
+  allDocs = allDocs.slice(0, limitCount);
+
+  const posts = await Promise.all(
+    allDocs.map(async (d) => {
+      const data = d.data();
+      const postId = d.id;
+
+      let liked = false;
+      if (uid) {
+        try {
+          const likeSnap = await getDoc(doc(db, "posts", postId, "likes", uid));
+          liked = likeSnap.exists();
+        } catch (e) {
+          liked = false;
+        }
+      }
+
+      return {
+        ...data,
+        _docId: postId,
+        likes: safeNumber(data.likes, 0),
+        commentsCount: safeNumber(data.commentsCount, 0),
+        liked,
+      };
+    })
+  );
+
+  return posts;
+}
+
+/* ---------------------------------
    Public profile: load posts by author
    - ✅ hard-block safe:
        - if read is denied, return [] (profile UI handles "not found"/blocked states)
