@@ -57,17 +57,25 @@ export async function getPublicUser(uid) {
 
   const data = snap.data();
 
+  // Normalize location: if stored as a plain string, wrap it
+  let location = data.location || null;
+  if (typeof location === "string") {
+    location = { city: location, visible: true };
+  }
+
   return {
     uid,
     handle: data.handle || null,
     displayName: data.displayName || null,
     photoURL: data.photoURL || null,
+    coverPhotoURL: data.coverPhotoURL || null,
     bio: data.bio || null,
+    tastePrefs: Array.isArray(data.tastePrefs) ? data.tastePrefs : [],
     reputation: typeof data.reputation === "number" ? data.reputation : 0,
     activity: typeof data.activity === "number" ? data.activity : 0,
     followersCount: typeof data.followersCount === "number" ? data.followersCount : 0,
     followingCount: typeof data.followingCount === "number" ? data.followingCount : 0,
-    location: data.location || null,
+    location,
   };
 }
 
@@ -162,7 +170,7 @@ export async function clearHandle(uid) {
 /* ----------------------------
    Update profile fields
 ----------------------------- */
-export async function updateProfile(uid, { displayName, bio, photoURL, location, homeCity, defaultRadiusMi, phoneNumber } = {}) {
+export async function updateProfile(uid, { displayName, bio, photoURL, coverPhotoURL, location, homeCity, defaultRadiusMi, phoneNumber } = {}) {
   if (!uid) throw new Error("Missing uid");
 
   const ref = doc(db, "users", uid);
@@ -174,15 +182,28 @@ export async function updateProfile(uid, { displayName, bio, photoURL, location,
   }
 
   if (bio !== undefined) {
-    patch.bio = String(bio).trim().slice(0, 80);
+    patch.bio = String(bio).trim().slice(0, 160);
   }
 
   if (photoURL !== undefined) {
     patch.photoURL = photoURL || null;
   }
 
+  if (coverPhotoURL !== undefined) {
+    patch.coverPhotoURL = coverPhotoURL || null;
+  }
+
   if (location !== undefined) {
-    patch.location = location ? String(location).trim().slice(0, 100) : null;
+    if (!location) {
+      patch.location = null;
+    } else if (typeof location === "string") {
+      patch.location = { city: location.trim().slice(0, 100), visible: true };
+    } else {
+      patch.location = {
+        city: String(location.city || "").trim().slice(0, 100),
+        visible: location.visible !== false,
+      };
+    }
   }
 
   if (homeCity !== undefined) {

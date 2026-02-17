@@ -43,7 +43,7 @@ const MOCK_SPOTS = [
 const keyForPath = (pathname) => {
   if (pathname === "/") return "home";
   if (pathname === "/explore") return "explore";
-  if (pathname === "/profile") return "profile";
+  if (pathname.startsWith("/profile") || pathname.startsWith("/u/")) return "profile";
   return null;
 };
 

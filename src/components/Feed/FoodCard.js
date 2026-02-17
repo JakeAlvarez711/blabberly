@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Modal from "../Modal/Modal";
+import LikeButton from "./LikeButton";
+import SaveButton from "./SaveButton";
+import CommentButton from "./CommentButton";
+import { slugify } from "../../data/placeAlgorithms";
 
 /* ----------------------------
    Helper: Comment Input
@@ -23,7 +27,7 @@ function CommentInput({ onAddComment, disabled = false }) {
       onChange={(e) => setText(e.target.value)}
       placeholder={
         disabled
-          ? "You can’t interact with this user"
+          ? "You can't interact with this user"
           : canSubmit
           ? "Add a comment..."
           : "Comments unavailable"
@@ -52,12 +56,14 @@ function FoodCard({
   food,
   liked = false,
   likes = 0,
+  saved = false,
   comments = [],
   userMap = {},
   onToggleLike,
+  onToggleSave,
   onAddComment,
   onOpenComments,
-  disabled = false, // ✅ NEW: block-gated UI
+  disabled = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
@@ -71,45 +77,45 @@ function FoodCard({
     <div style={styles.card}>
       {/* Video */}
       <div style={styles.media}>
-        <video autoPlay loop muted playsInline style={styles.video}>
-          <source
-            src="https://www.w3schools.com/html/mov_bbb.mp4"
-            type="video/mp4"
-          />
-        </video>
+        {food.videoURL ? (
+          <video autoPlay loop muted playsInline style={styles.video}>
+            <source src={food.videoURL} type="video/mp4" />
+          </video>
+        ) : (
+          <video autoPlay loop muted playsInline style={styles.video}>
+            <source
+              src="https://www.w3schools.com/html/mov_bbb.mp4"
+              type="video/mp4"
+            />
+          </video>
+        )}
       </div>
 
       {/* Actions */}
       <div style={styles.actions}>
-        <button
-          style={{
-            ...styles.actionBtn,
-            opacity: disabled ? 0.5 : 1,
-            cursor: disabled ? "not-allowed" : "pointer",
-          }}
-          onClick={disabled ? undefined : onToggleLike}
+        <LikeButton
+          liked={liked}
+          count={likes}
+          onToggle={onToggleLike}
           disabled={disabled}
-          title={disabled ? "You can’t interact with this user" : ""}
-        >
-          {liked ? "❤️" : "🤍"} {likes}
-        </button>
-
-        <button
-          style={{
-            ...styles.actionBtn,
-            opacity: disabled ? 0.5 : 1,
-            cursor: disabled ? "not-allowed" : "pointer",
-          }}
+        />
+        <CommentButton
+          count={commentsCount}
           onClick={() => {
-            if (disabled) return;
-            setIsOpen(true);
-            if (typeof onOpenComments === "function") onOpenComments();
+            if (food?._docId) {
+              navigate(`/p/${food._docId}`);
+            } else {
+              setIsOpen(true);
+              if (typeof onOpenComments === "function") onOpenComments();
+            }
           }}
           disabled={disabled}
-          title={disabled ? "You can’t interact with this user" : ""}
-        >
-          💬 {commentsCount}
-        </button>
+        />
+        <SaveButton
+          saved={saved}
+          onToggle={onToggleSave}
+          disabled={disabled}
+        />
 
         {disabled ? (
           <div style={styles.disabledHint}>Blocked</div>
@@ -118,11 +124,30 @@ function FoodCard({
 
       {/* Info */}
       <div style={styles.info}>
-        <h3>
-          {food.dish} · ${food.price}
-        </h3>
-        <p>{food.restaurant}</p>
-        <p>{food.distance} mi</p>
+        <div style={styles.infoOverlay}>
+          {food.authorHandle && (
+            <div style={styles.username}>@{food.authorHandle}</div>
+          )}
+          <div style={styles.dishLine}>
+            {food.dish}
+            {typeof food.price === "number" ? ` · $${food.price}` : ""}
+          </div>
+          {food.restaurant && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/place/${slugify(food.restaurant)}`);
+              }}
+              style={styles.restaurantBtn}
+            >
+              {food.restaurant}
+            </button>
+          )}
+          {food.city && (
+            <div style={styles.city}>{food.city}</div>
+          )}
+        </div>
       </div>
 
       {/* Comments Modal */}
@@ -167,13 +192,13 @@ function FoodCard({
 ----------------------------- */
 const styles = {
   card: {
-    height: "100vh",
-    width: "100vw",
+    height: "100%",
+    width: "100%",
     background: "#000",
     color: "#fff",
     position: "relative",
-    scrollSnapAlign: "start",
-    scrollSnapStop: "always",
+    borderRadius: 16,
+    overflow: "hidden",
   },
   media: {
     position: "absolute",
@@ -187,18 +212,12 @@ const styles = {
   actions: {
     position: "absolute",
     right: 12,
-    bottom: 120,
+    bottom: 80,
     display: "flex",
     flexDirection: "column",
-    gap: 12,
+    gap: 16,
     zIndex: 10,
-    alignItems: "flex-end",
-  },
-  actionBtn: {
-    background: "none",
-    border: "none",
-    color: "white",
-    fontSize: 16,
+    alignItems: "center",
   },
   disabledHint: {
     fontSize: 12,
@@ -211,9 +230,45 @@ const styles = {
   },
   info: {
     position: "absolute",
-    bottom: 20,
-    left: 12,
+    bottom: 0,
+    left: 0,
+    right: 60,
     zIndex: 10,
+  },
+  infoOverlay: {
+    padding: "40px 16px 16px",
+    background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)",
+  },
+  username: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#FFFFFF",
+    marginBottom: 4,
+  },
+  dishLine: {
+    fontSize: 16,
+    fontWeight: 800,
+    color: "#FFFFFF",
+    marginBottom: 2,
+  },
+  restaurantBtn: {
+    display: "block",
+    background: "transparent",
+    border: "none",
+    padding: 0,
+    margin: 0,
+    fontSize: 14,
+    color: "rgba(255,255,255,0.85)",
+    marginBottom: 2,
+    cursor: "pointer",
+    textDecoration: "underline",
+    textDecorationColor: "rgba(255,255,255,0.4)",
+    textUnderlineOffset: 2,
+    textAlign: "left",
+  },
+  city: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.6)",
   },
   handleBtn: {
     background: "transparent",

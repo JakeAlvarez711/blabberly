@@ -105,6 +105,7 @@ export async function loadFeedFromFirestore({
         _docId: postId,
         likes: safeNumber(data.likes, 0),
         commentsCount: safeNumber(data.commentsCount, 0),
+        saves: safeNumber(data.saves, 0),
         liked,
       };
     })
@@ -167,6 +168,7 @@ export async function loadLocalFeed({
         _docId: postId,
         likes: safeNumber(data.likes, 0),
         commentsCount: safeNumber(data.commentsCount, 0),
+        saves: safeNumber(data.saves, 0),
         liked,
       };
     })
@@ -250,6 +252,7 @@ export async function loadFriendsFeed({
         _docId: postId,
         likes: safeNumber(data.likes, 0),
         commentsCount: safeNumber(data.commentsCount, 0),
+        saves: safeNumber(data.saves, 0),
         liked,
       };
     })
@@ -305,6 +308,7 @@ export async function loadPostsByAuthor({
         _docId: postId,
         likes: safeNumber(data.likes, 0),
         commentsCount: safeNumber(data.commentsCount, 0),
+        saves: safeNumber(data.saves, 0),
         liked,
       };
     })
@@ -386,6 +390,7 @@ export async function updateLike(postId, uid, nextLiked) {
 
   const postRef = doc(db, "posts", postId);
   const likeRef = doc(db, "posts", postId, "likes", uid);
+  const likedPostRef = doc(db, "users", uid, "likedPosts", postId);
 
   try {
     await runTransaction(db, async (tx) => {
@@ -394,16 +399,20 @@ export async function updateLike(postId, uid, nextLiked) {
       if (nextLiked) {
         if (!likeSnap.exists()) {
           tx.set(likeRef, { uid, createdAt: serverTimestamp() });
+          tx.set(likedPostRef, { likedAt: serverTimestamp() });
           tx.update(postRef, {
             likes: increment(1),
+            lastEngagementAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
         }
       } else {
         if (likeSnap.exists()) {
           tx.delete(likeRef);
+          tx.delete(likedPostRef);
           tx.update(postRef, {
             likes: increment(-1),
+            lastEngagementAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
         }
@@ -446,6 +455,7 @@ export async function addCommentToPost(postId, comment) {
 
       tx.update(postRef, {
         commentsCount: increment(1),
+        lastEngagementAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
     });

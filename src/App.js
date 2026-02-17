@@ -2,10 +2,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import FeedPage from "./pages/FeedPage";
 import ExplorePage from "./pages/ExplorePage";
-import ProfilePage from "./pages/ProfilePage";
+import ProfilePage from "./pages/ProfilePage/ProfilePage";
+import EditProfilePage from "./pages/ProfilePage/EditProfilePage";
 import CreatePostPage from "./pages/CreatePostPage";
-import PublicProfilePage from "./pages/PublicProfilePage";
 import PostPage from "./pages/PostPage";
+import PlaceDetailPage from "./pages/PlaceDetailPage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingTasteProfile from "./pages/OnboardingTasteProfile";
 import OnboardingProfileSetup from "./pages/OnboardingProfileSetup";
@@ -21,13 +22,17 @@ function AppShell() {
           <Routes>
             <Route path="/" element={<FeedPage />} />
             <Route path="/create" element={<CreatePostPage />} />
+            <Route path="/profile/edit" element={<EditProfilePage />} />
             <Route path="/profile" element={<ProfilePage />} />
 
             {/* Public profiles */}
-            <Route path="/u/:handle" element={<PublicProfilePage />} />
+            <Route path="/u/:handle" element={<ProfilePage />} />
 
             {/* Single post viewer (fullscreen) */}
             <Route path="/p/:postId" element={<PostPage />} />
+
+            {/* Place detail */}
+            <Route path="/place/:placeId" element={<PlaceDetailPage />} />
 
             {/* Auth & Onboarding */}
             <Route path="/auth" element={<AuthPage />} />

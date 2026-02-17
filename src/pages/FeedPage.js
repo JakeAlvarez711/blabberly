@@ -14,6 +14,9 @@ import {
   addCommentToPost,
 } from "../data/firestoreFeedService";
 
+import { toggleSave, checkSavedBatch } from "../data/interactionsService";
+import { rankByEngagement, rankByRecency } from "../utils/engagementAlgorithm";
+
 import { getFollowingIds } from "../data/followService";
 import { loadBlockedIds } from "../data/blockService";
 
@@ -24,49 +27,6 @@ import { getPublicUser } from "../data/userService";
 
 const generateId = () =>
   `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-/* ----------------------------
-   Ranking helpers
------------------------------ */
-const toMillis = (v) => {
-  if (!v) return 0;
-  if (typeof v === "number") return v;
-  if (typeof v?.toMillis === "function") return v.toMillis();
-  return 0;
-};
-
-const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-
-const scorePost = (p) => {
-  const ageMs = Date.now() - toMillis(p?.createdAt);
-  const ageHours = ageMs / (1000 * 60 * 60);
-  const recency = 1 - clamp(ageHours / 72, 0, 1);
-
-  const likes = typeof p?.likes === "number" ? p.likes : 0;
-  const commentsCount =
-    typeof p?.commentsCount === "number"
-      ? p.commentsCount
-      : Array.isArray(p?.comments)
-      ? p.comments.length
-      : 0;
-
-  const engagement = clamp((likes + commentsCount * 2) / 25, 0, 1);
-
-  const distance = typeof p?.distance === "number" ? p.distance : null;
-  const proximity = distance == null ? 0.5 : 1 - clamp(distance / 10, 0, 1);
-
-  return recency * 0.55 + engagement * 0.3 + proximity * 0.15;
-};
-
-const rankFeed = (posts, mode = "forYou") => {
-  const list = Array.isArray(posts) ? [...posts] : [];
-
-  if (mode === "latest") {
-    return list.sort((a, b) => toMillis(b?.createdAt) - toMillis(a?.createdAt));
-  }
-
-  return list.sort((a, b) => scorePost(b) - scorePost(a));
-};
 
 const isPermissionDenied = (e) => {
   const code = e?.code || e?.message || "";
@@ -83,6 +43,9 @@ function FeedPage({ user }) {
 
   // ✅ blocked user ids (Set)
   const [blockedIds, setBlockedIds] = useState(() => new Set());
+
+  // ✅ saved post ids (Set)
+  const [savedIds, setSavedIds] = useState(() => new Set());
 
   /* ----------------------------
      Auth
@@ -238,6 +201,28 @@ function FeedPage({ user }) {
   }, [uid, blockedIds]);
 
   /* ----------------------------
+     Load saved state for current feed posts
+  ----------------------------- */
+  useEffect(() => {
+    if (!uid) { setSavedIds(new Set()); return; }
+
+    const postIds = feed.map((p) => p?._docId).filter(Boolean);
+    if (!postIds.length) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const saved = await checkSavedBatch(postIds, uid);
+        if (!cancelled) setSavedIds(saved);
+      } catch (e) {
+        console.error("Failed to check saved state:", e);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [uid, feed]);
+
+  /* ----------------------------
      Comments
   ----------------------------- */
   const loadComments = async (postId) => {
@@ -349,12 +334,59 @@ function FeedPage({ user }) {
   };
 
   /* ----------------------------
+     Save toggle
+     - optimistic UI
+  ----------------------------- */
+  const toggleSavePost = async (postId) => {
+    if (!uid) return;
+
+    const food = feed.find((p) => p._docId === postId);
+    const nextSaved = !savedIds.has(postId);
+
+    // Optimistic update
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (nextSaved) next.add(postId);
+      else next.delete(postId);
+      return next;
+    });
+
+    setFeed((prev) =>
+      prev.map((item) => {
+        if (item._docId !== postId) return item;
+        const baseSaves = typeof item.saves === "number" ? item.saves : 0;
+        return { ...item, saves: Math.max(0, baseSaves + (nextSaved ? 1 : -1)) };
+      })
+    );
+
+    try {
+      await toggleSave(postId, uid, nextSaved, food || {});
+    } catch (e) {
+      console.error("Failed to persist save:", e);
+      // Revert
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (nextSaved) next.delete(postId);
+        else next.add(postId);
+        return next;
+      });
+      setFeed((prev) =>
+        prev.map((item) => {
+          if (item._docId !== postId) return item;
+          const baseSaves = typeof item.saves === "number" ? item.saves : 0;
+          return { ...item, saves: Math.max(0, baseSaves + (nextSaved ? -1 : 1)) };
+        })
+      );
+    }
+  };
+
+  /* ----------------------------
      Filter blocked + rank
   ----------------------------- */
-  const ranked = rankFeed(
-    feed.filter((p) => !blockedIds.has(p?.authorId)),
-    activeTab === "local" ? "forYou" : "latest"
-  );
+  const filtered = feed.filter((p) => !blockedIds.has(p?.authorId));
+  const ranked = activeTab === "local"
+    ? rankByEngagement(filtered)
+    : rankByRecency(filtered);
 
   /* ----------------------------
      Mock cards (shown when Firestore feed is empty)
@@ -531,10 +563,12 @@ function FeedPage({ user }) {
                     food={food}
                     liked={!!food.liked}
                     likes={food.likes || 0}
+                    saved={savedIds.has(food._docId)}
                     comments={food.comments || []}
                     userMap={userMap}
                     disabled={blockedIds.has(food?.authorId)}
                     onToggleLike={() => toggleLike(food._docId)}
+                    onToggleSave={() => toggleSavePost(food._docId)}
                     onAddComment={(text) => addComment(food._docId, text)}
                     onOpenComments={() => loadComments(food._docId)}
                   />

@@ -1,30 +1,47 @@
+import { useState, useCallback } from "react";
 import { Search } from "lucide-react";
+import SearchOverlay from "../search/SearchOverlay";
 
 function Header() {
-  return (
-    <header style={styles.header}>
-      <div style={styles.headerInner}>
-        <div style={styles.wordmark}>blabberly</div>
+  const [searchOpen, setSearchOpen] = useState(false);
 
-        <div style={styles.searchBar}>
-          <div style={styles.searchIconLeft}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="#F26522" strokeWidth="2.5" />
-              <path d="M12 7v5l3 3" stroke="#F26522" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            placeholder="See what's happening"
-            style={styles.searchInput}
-            readOnly
-          />
-          <div style={styles.searchIconRight}>
-            <Search size={16} color="#999" />
-          </div>
+  const handleClose = useCallback(() => setSearchOpen(false), []);
+
+  return (
+    <>
+      <header style={styles.header}>
+        <div style={styles.headerInner}>
+          <div style={styles.wordmark}>blabberly</div>
+
+          <button
+            onClick={() => setSearchOpen(true)}
+            style={styles.searchBar}
+          >
+            <div style={styles.searchIconLeft}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="#F26522" strokeWidth="2.5" />
+                <path d="M12 7v5l3 3" stroke="#F26522" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
+            <span style={styles.searchPlaceholder}>See what's happening</span>
+            <div style={styles.searchIconRight}>
+              <Search size={16} color="#999" />
+            </div>
+          </button>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {searchOpen && <SearchOverlay onClose={handleClose} />}
+
+      {/* Spinner animation for search overlay */}
+      {searchOpen && (
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      )}
+    </>
   );
 }
 
@@ -62,6 +79,9 @@ const styles = {
     borderRadius: 999,
     padding: "0 14px",
     height: 40,
+    border: "none",
+    cursor: "pointer",
+    textAlign: "left",
   },
   searchIconLeft: {
     flexShrink: 0,
@@ -69,13 +89,10 @@ const styles = {
     alignItems: "center",
     marginRight: 10,
   },
-  searchInput: {
+  searchPlaceholder: {
     flex: 1,
-    border: "none",
-    background: "transparent",
-    outline: "none",
     fontSize: 14,
-    color: "#1A1A1A",
+    color: "#999",
   },
   searchIconRight: {
     flexShrink: 0,

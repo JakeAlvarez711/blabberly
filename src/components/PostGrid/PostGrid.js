@@ -5,6 +5,7 @@ export default function PostGrid({
   posts = [],
   onSelectPost,
   emptyText = "No posts yet.",
+  tileBackground = "#111",
 }) {
   const list = useMemo(() => (Array.isArray(posts) ? posts : []), [posts]);
 
@@ -26,7 +27,7 @@ export default function PostGrid({
               if (typeof onSelectPost === "function") onSelectPost(p);
             }}
           >
-            <div style={styles.tile}>
+            <div style={{ ...styles.tile, background: tileBackground }}>
               {hasVideo ? (
                 <video
                   src={p.videoURL}
