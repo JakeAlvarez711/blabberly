@@ -13,33 +13,67 @@ const toNumberOrNull = (v) => {
 export async function createPost(uid, payload = {}) {
   if (!uid) throw new Error("Missing uid");
 
-  const dish = String(payload.dish || "").trim();
-  const restaurant = String(payload.restaurant || "").trim();
-  const videoURL = String(payload.videoURL || "").trim();
+  const hasMedia = !!payload.media?.url;
+  const hasVideoURL = !!String(payload.videoURL || "").trim();
 
-  if (!dish) throw new Error("Dish is required");
-  if (!restaurant) throw new Error("Restaurant is required");
-  if (!videoURL) throw new Error("Video URL is required (v1)");
+  // V2 flow (media object) or V1 flow (videoURL string)
+  if (!hasMedia && !hasVideoURL) {
+    throw new Error("Media is required");
+  }
 
-  const price = toNumberOrNull(payload.price);
-  const distance = toNumberOrNull(payload.distance);
-  const city = String(payload.city || "").trim() || null;
-
-  const docRef = await addDoc(collection(db, "posts"), {
-    authorId: uid, // ✅ required by your rules
-    dish,
-    restaurant,
-    videoURL,
-    price, // number | null
-    distance, // number | null
-    city, // string | null — used for LOCAL feed filtering
-
+  // Build document fields
+  const doc = {
+    type: "post",
+    authorId: uid,
     likes: 0,
     commentsCount: 0,
-
-    createdAt: serverTimestamp(), // ✅ this is what you’re missing
+    createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
+  };
 
+  // V2 fields
+  if (hasMedia) {
+    doc.media = {
+      url: payload.media.url,
+      type: payload.media.type,         // "image" | "video"
+      storagePath: payload.media.storagePath || null,
+    };
+    doc.caption = String(payload.caption || "").trim();
+    doc.tags = Array.isArray(payload.tags) ? payload.tags : [];
+
+    if (payload.place) {
+      doc.place = {
+        placeId: payload.place.placeId || "",
+        name: payload.place.name || "",
+        address: payload.place.address || "",
+        lat: payload.place.lat ?? null,
+        lng: payload.place.lng ?? null,
+        category: payload.place.category || "",
+      };
+    }
+
+    // Backward-compat: derive legacy fields so existing feed/map/search still works
+    doc.videoURL = payload.media.type === "video" ? payload.media.url : payload.media.url;
+    doc.restaurant = payload.place?.name || "";
+    doc.dish = doc.caption.slice(0, 60);
+  } else {
+    // V1 legacy flow
+    const dish = String(payload.dish || "").trim();
+    const restaurant = String(payload.restaurant || "").trim();
+    const videoURL = String(payload.videoURL || "").trim();
+    if (!dish) throw new Error("Dish is required");
+    if (!restaurant) throw new Error("Restaurant is required");
+
+    doc.dish = dish;
+    doc.restaurant = restaurant;
+    doc.videoURL = videoURL;
+  }
+
+  // Optional fields shared by both flows
+  doc.price = toNumberOrNull(payload.price);
+  doc.distance = toNumberOrNull(payload.distance);
+  doc.city = String(payload.city || "").trim() || null;
+
+  const docRef = await addDoc(collection(db, "posts"), doc);
   return docRef.id;
 }

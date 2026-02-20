@@ -2,15 +2,18 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import FeedPage from "./pages/FeedPage";
 import ExplorePage from "./pages/ExplorePage";
+import MapPage from "./pages/MapPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import EditProfilePage from "./pages/ProfilePage/EditProfilePage";
-import CreatePostPage from "./pages/CreatePostPage";
+import CreatePostPage from "./pages/CreatePost/CreatePostPage";
 import PostPage from "./pages/PostPage";
 import PlaceDetailPage from "./pages/PlaceDetailPage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingTasteProfile from "./pages/OnboardingTasteProfile";
 import OnboardingProfileSetup from "./pages/OnboardingProfileSetup";
 import FineTunePreferences from "./pages/FineTunePreferences";
+import SettingsPage from "./pages/Settings/SettingsPage";
+import MessagesPage from "./pages/Messages/MessagesPage";
 
 import AuthGate from "./components/Auth/AuthGate";
 
@@ -42,6 +45,15 @@ function AppShell() {
 
             {/* Explore */}
             <Route path="/explore" element={<ExplorePage />} />
+
+            {/* Messages */}
+            <Route path="/messages" element={<MessagesPage />} />
+
+            {/* Settings */}
+            <Route path="/settings" element={<SettingsPage />} />
+
+            {/* Map */}
+            <Route path="/map" element={<MapPage />} />
           </Routes>
         </div>
       </div>

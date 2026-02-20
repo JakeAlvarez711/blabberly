@@ -15,7 +15,9 @@ export default function PostGrid({
     <div style={styles.grid}>
       {list.map((p) => {
         const key = p?._docId || p?.id;
-        const hasVideo = !!p?.videoURL;
+        const isImage = p?.media?.type === "image";
+        const isVideo = p?.media?.type === "video" || !!p?.videoURL;
+        const mediaSrc = p?.media?.url || p?.videoURL;
 
         return (
           <button
@@ -28,9 +30,15 @@ export default function PostGrid({
             }}
           >
             <div style={{ ...styles.tile, background: tileBackground }}>
-              {hasVideo ? (
+              {isImage ? (
+                <img
+                  src={mediaSrc}
+                  alt=""
+                  style={styles.media}
+                />
+              ) : isVideo ? (
                 <video
-                  src={p.videoURL}
+                  src={mediaSrc}
                   muted
                   playsInline
                   preload="metadata"
@@ -38,7 +46,7 @@ export default function PostGrid({
                 />
               ) : (
                 <div style={styles.fallback}>
-                  <div style={{ opacity: 0.7, fontWeight: 700 }}>No video</div>
+                  <div style={{ opacity: 0.7, fontWeight: 700 }}>No media</div>
                 </div>
               )}
 

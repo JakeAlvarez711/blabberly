@@ -16,14 +16,14 @@ const SIDEBAR_SECTIONS = [
     label: "DISCOVER",
     items: [
       { key: "explore", label: "Explore", icon: Compass, path: "/explore" },
-      { key: "map", label: "Map", icon: Map },
+      { key: "map", label: "Map", icon: Map, path: "/map" },
       { key: "saved", label: "Saved", icon: Bookmark },
     ],
   },
   {
     label: "SOCIAL",
     items: [
-      { key: "messages", label: "Messages", icon: MessageSquare },
+      { key: "messages", label: "Messages", icon: MessageSquare, path: "/messages" },
     ],
   },
   {
@@ -43,6 +43,8 @@ const MOCK_SPOTS = [
 const keyForPath = (pathname) => {
   if (pathname === "/") return "home";
   if (pathname === "/explore") return "explore";
+  if (pathname === "/map") return "map";
+  if (pathname === "/messages") return "messages";
   if (pathname.startsWith("/profile") || pathname.startsWith("/u/")) return "profile";
   return null;
 };
@@ -150,7 +152,7 @@ function Sidebar({ userDoc }) {
 
         {/* Settings & Sign Out */}
         <div style={styles.sidebarFooterLinks}>
-          <button style={styles.footerLink}>
+          <button onClick={() => navigate("/settings")} style={styles.footerLink}>
             <Settings size={14} />
             <span>Settings</span>
           </button>

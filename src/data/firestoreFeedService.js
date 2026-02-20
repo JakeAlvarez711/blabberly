@@ -289,29 +289,31 @@ export async function loadPostsByAuthor({
   }
 
   const posts = await Promise.all(
-    snap.docs.map(async (d) => {
-      const data = d.data();
-      const postId = d.id;
+    snap.docs
+      .filter((d) => d.data().type !== "route")
+      .map(async (d) => {
+        const data = d.data();
+        const postId = d.id;
 
-      let liked = false;
-      if (uid) {
-        try {
-          const likeSnap = await getDoc(doc(db, "posts", postId, "likes", uid));
-          liked = likeSnap.exists();
-        } catch (e) {
-          liked = false;
+        let liked = false;
+        if (uid) {
+          try {
+            const likeSnap = await getDoc(doc(db, "posts", postId, "likes", uid));
+            liked = likeSnap.exists();
+          } catch (e) {
+            liked = false;
+          }
         }
-      }
 
-      return {
-        ...data,
-        _docId: postId,
-        likes: safeNumber(data.likes, 0),
-        commentsCount: safeNumber(data.commentsCount, 0),
-        saves: safeNumber(data.saves, 0),
-        liked,
-      };
-    })
+        return {
+          ...data,
+          _docId: postId,
+          likes: safeNumber(data.likes, 0),
+          commentsCount: safeNumber(data.commentsCount, 0),
+          saves: safeNumber(data.saves, 0),
+          liked,
+        };
+      })
   );
 
   return posts;

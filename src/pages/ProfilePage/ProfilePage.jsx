@@ -14,11 +14,12 @@ import ProfileStats from "../../components/profile/ProfileStats";
 import SimilarPlaces from "../../components/profile/SimilarPlaces";
 import PostsGrid from "../../components/profile/PostsGrid";
 import SavedPlaces from "../../components/profile/SavedPlaces";
+import ProfileRoutes from "../../components/profile/ProfileRoutes";
 import ReviewsList from "../../components/profile/ReviewsList";
 
 import { useAuth } from "../../hooks/useAuth";
 
-const TABS = ["Posts", "Saved", "Reviews"];
+const TABS = ["Posts", "Saved", "Routes", "Reviews"];
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -413,6 +414,10 @@ export default function ProfilePage() {
 
               {activeTab === "Saved" && (
                 <SavedPlaces uid={profile.uid} isOwnProfile={isOwnProfile} />
+              )}
+
+              {activeTab === "Routes" && (
+                <ProfileRoutes uid={profile.uid} isOwnProfile={isOwnProfile} />
               )}
 
               {activeTab === "Reviews" && (
