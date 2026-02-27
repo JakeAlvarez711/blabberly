@@ -22,6 +22,12 @@ service cloud.firestore {
       return blocks(a, b) || blocks(b, a);
     }
 
+    // Conversation participant helper
+    function isParticipant(convId) {
+      return request.auth.uid in
+        get(/databases/$(database)/documents/conversations/$(convId)).data.participants;
+    }
+
     /* ----------------------------
        POSTS (base doc)
        - Read: public, BUT signed-in users can't read if blocked either way
@@ -43,7 +49,7 @@ service cloud.firestore {
 
       allow update: if signedIn()
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['likes', 'commentsCount', 'saves', 'lastEngagementAt', 'updatedAt']);
+          .hasOnly(['likes', 'commentsCount', 'saves', 'lastEngagementAt', 'updatedAt', 'lastLikeNotifiedAt']);
 
       allow delete: if signedIn()
         && resource.data.authorId == request.auth.uid;
@@ -100,6 +106,51 @@ service cloud.firestore {
     }
 
     /* ----------------------------
+       CONVERSATIONS
+       - Read: only participants
+       - Create: signed in, must be a participant, exactly 2 participants
+       - Update: only participants, restricted to messaging metadata fields
+       - Delete: blocked (conversations are never deleted from client)
+    ----------------------------- */
+    match /conversations/{conversationId} {
+
+      allow read: if signedIn()
+        && request.auth.uid in resource.data.participants;
+
+      allow create: if signedIn()
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants.size() == 2;
+
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.participants
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['lastMessage', 'unreadCount', 'updatedAt', 'typing']);
+
+      allow delete: if false;
+
+      /* ----------------------------
+         MESSAGES subcollection
+         conversations/{conversationId}/messages/{messageId}
+      ----------------------------- */
+      match /messages/{messageId} {
+
+        allow read: if signedIn()
+          && isParticipant(conversationId);
+
+        allow create: if signedIn()
+          && isParticipant(conversationId)
+          && request.resource.data.senderId == request.auth.uid;
+
+        allow update: if signedIn()
+          && isParticipant(conversationId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['reactions', 'read', 'readAt']);
+
+        allow delete: if false;
+      }
+    }
+
+    /* ----------------------------
        USERS
        - Read: public profiles, BUT signed-in users can't read if blocked either way
        - Owner can create/delete
@@ -138,6 +189,8 @@ service cloud.firestore {
               'fineTune',
               'followersCount',
               'followingCount',
+              'notificationPrefs',
+              'privacySettings',
               'updatedAt'
             ])
         )
@@ -262,6 +315,17 @@ service cloud.firestore {
         allow update: if isOwner(uid);
         allow delete: if isOwner(uid);
       }
+
+      /* ----------------------------
+         PUSH TOKENS: users/{uid}/pushTokens/{tokenId}
+         Owner-only CRUD. Cloud Functions read via admin SDK (bypasses rules).
+      ----------------------------- */
+      match /pushTokens/{tokenId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid);
+        allow update: if isOwner(uid);
+        allow delete: if isOwner(uid);
+      }
     }
 
     /* ----------------------------
@@ -294,6 +358,26 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update: if signedIn();
       allow delete: if false;
+    }
+
+    /* ----------------------------
+       REPORTS (content flagging)
+       - Create: signed in, must set uid = self, validated fields
+       - Read: only own reports (for duplicate checking)
+       - Update/Delete: blocked (admin-only via console)
+    ----------------------------- */
+    match /reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.reportedUserId is string
+        && request.resource.data.contentType in ["post", "comment", "message", "user"]
+        && request.resource.data.reason in ["spam", "harassment", "inappropriate", "other"]
+        && request.resource.data.status == "pending";
+
+      allow read: if signedIn()
+        && resource.data.uid == request.auth.uid;
+
+      allow update, delete: if false;
     }
 
     match /test/{docId} {
