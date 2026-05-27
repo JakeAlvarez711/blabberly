@@ -9,6 +9,7 @@ import CreatePostPage from "./pages/CreatePost/CreatePostPage";
 import PostPage from "./pages/PostPage";
 import PlaceDetailPage from "./pages/PlaceDetailPage";
 import AuthPage from "./pages/AuthPage";
+import WaitlistPage from "./pages/WaitlistPage";
 import OnboardingTasteProfile from "./pages/OnboardingTasteProfile";
 import OnboardingProfileSetup from "./pages/OnboardingProfileSetup";
 import FineTunePreferences from "./pages/FineTunePreferences";
@@ -16,6 +17,13 @@ import SettingsPage from "./pages/Settings/SettingsPage";
 import MessagesPage from "./pages/Messages/MessagesPage";
 
 import AuthGate from "./components/Auth/AuthGate";
+import { useAuth } from "./hooks/useAuth";
+
+function RootRoute() {
+  const { user, ready } = useAuth();
+  if (!ready) return null;
+  return user ? <FeedPage /> : <WaitlistPage />;
+}
 
 function AppShell() {
   return (
@@ -23,7 +31,7 @@ function AppShell() {
       <div style={styles.app}>
         <div style={styles.content}>
           <Routes>
-            <Route path="/" element={<FeedPage />} />
+            <Route path="/" element={<RootRoute />} />
             <Route path="/create" element={<CreatePostPage />} />
             <Route path="/profile/edit" element={<EditProfilePage />} />
             <Route path="/profile" element={<ProfilePage />} />

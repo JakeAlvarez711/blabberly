@@ -9,6 +9,9 @@ const ONBOARDING_ROUTES = [
   "/onboarding/finetune",
 ];
 
+// Routes anonymous visitors can stay on without being redirected.
+const PUBLIC_ROUTES = ["/", "/auth"];
+
 export default function AuthGate({ children }) {
   const { user, ready, onboardingCompleted } = useAuth();
   const location = useLocation();
@@ -26,10 +29,10 @@ export default function AuthGate({ children }) {
 
     const path = location.pathname;
 
-    // Not authenticated → must sign in
+    // Not authenticated → keep on public routes, otherwise send to waitlist landing
     if (!user) {
-      if (path !== "/auth") {
-        navigate("/auth", { replace: true });
+      if (!PUBLIC_ROUTES.includes(path)) {
+        navigate("/", { replace: true });
       }
       return;
     }

@@ -380,6 +380,31 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    /* ----------------------------
+       WAITLIST (public landing page signups)
+       - Doc ID is the phone number in E.164 (+1XXXXXXXXXX)
+       - Anyone can create with a valid shape; nobody can read or list
+       - Resubmissions allowed to bump lastSeenAt + userAgent + referrer only
+    ----------------------------- */
+    match /waitlist/{phone} {
+      allow get, list: if false;
+
+      allow create: if
+        phone.matches('^\\+1[0-9]{10}$')
+        && request.resource.data.phone == phone
+        && request.resource.data.source is string
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.lastSeenAt is timestamp;
+
+      allow update: if
+        phone.matches('^\\+1[0-9]{10}$')
+        && request.resource.data.phone == phone
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['lastSeenAt', 'userAgent', 'referrer', 'createdAt']);
+
+      allow delete: if false;
+    }
+
     match /test/{docId} {
       allow read, write: if false;
     }
