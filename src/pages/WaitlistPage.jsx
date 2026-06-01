@@ -62,7 +62,9 @@ function injectKeyframes() {
 
     @media (max-width: 600px) {
       .bb-slogan { font-size: 38px !important; letter-spacing: -1px !important; }
-      .bb-logo   { height: 64px !important; }
+      .bb-logo   { height: 44px !important; }
+      .bb-lockup span { font-size: 26px !important; letter-spacing: -0.8px !important; }
+      .bb-lockup { gap: 10px !important; }
       .bb-card   { padding: 22px !important; }
     }
   `;
@@ -158,7 +160,10 @@ export default function WaitlistPage() {
   return (
     <div style={styles.page}>
       <div style={styles.center}>
-        <img src={logo} alt="Blabberly" className="bb-logo" style={styles.logo} />
+        <div className="bb-lockup" style={styles.lockup} aria-label="Blabberly">
+          <img src={logo} alt="" className="bb-logo" style={styles.logoIcon} />
+          <span style={styles.wordmark}>Blabberly.</span>
+        </div>
 
         <h1 style={styles.slogan} className="bb-slogan">
           {SLOGAN}
@@ -291,13 +296,27 @@ const styles = {
     flex: 1,
     justifyContent: "center",
   },
-  logo: {
-    height: 80,
-    objectFit: "contain",
+  lockup: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 14,
     marginBottom: 24,
     opacity: 0,
     animation: "bbFadeIn 600ms ease-out 80ms forwards",
+  },
+  logoIcon: {
+    height: 56,
+    objectFit: "contain",
     filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.18))",
+  },
+  wordmark: {
+    fontSize: 36,
+    fontWeight: 800,
+    color: "#FFFFFF",
+    letterSpacing: "-1px",
+    lineHeight: 1,
+    textShadow: "0 2px 12px rgba(120, 40, 0, 0.22)",
   },
   slogan: {
     fontSize: 52,
