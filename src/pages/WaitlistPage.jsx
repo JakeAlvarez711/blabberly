@@ -61,7 +61,7 @@ function injectKeyframes() {
     .bb-footer-link:hover { color: #ffffff; text-decoration: underline; }
 
     @media (max-width: 600px) {
-      .bb-slogan { font-size: 38px !important; letter-spacing: -1px !important; }
+      .bb-slogan { font-size: 38px !important; letter-spacing: -1px !important; white-space: normal !important; }
       .bb-logo   { height: 44px !important; }
       .bb-lockup span { font-size: 26px !important; letter-spacing: -0.8px !important; }
       .bb-lockup { gap: 10px !important; }
@@ -327,6 +327,7 @@ const styles = {
     color: "#FFFFFF",
     textAlign: "center",
     textShadow: "0 4px 20px rgba(120, 40, 0, 0.25)",
+    whiteSpace: "nowrap",
     opacity: 0,
     animation: "bbSloganIn 820ms cubic-bezier(0.2, 0.8, 0.2, 1) 180ms forwards",
   },
