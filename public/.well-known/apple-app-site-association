@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAM_ID.com.blabberly.mobile"],
+        "paths": ["/p/*", "/place/*", "/u/*"]
+      }
+    ]
+  }
+}
