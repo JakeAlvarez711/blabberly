@@ -1,23 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, Lock, Phone, Trash2 } from "lucide-react";
-import { updateProfile } from "../../../data/userService";
+import { updateProfile, getPrivateContact } from "../../../data/userService";
 import ChangeEmailModal from "../../../components/modals/ChangeEmailModal";
 import ChangePasswordModal from "../../../components/modals/ChangePasswordModal";
 import DeleteAccountModal from "../../../components/modals/DeleteAccountModal";
 
-export default function AccountSettings({ user, userDoc, uid, onToast }) {
+export default function AccountSettings({ user, uid, onToast }) {
   const [emailModal, setEmailModal] = useState(false);
   const [passwordModal, setPasswordModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
 
-  const [phone, setPhone] = useState(userDoc?.phoneNumber || "");
+  const [phone, setPhone] = useState("");
+  const [savedPhone, setSavedPhone] = useState("");
   const [editingPhone, setEditingPhone] = useState(false);
   const [phoneSaving, setPhoneSaving] = useState(false);
+
+  // Phone lives in the owner-only users/{uid}/private/contact doc now (C4),
+  // not on the public userDoc — load it directly.
+  useEffect(() => {
+    if (!uid) return;
+    let cancelled = false;
+    (async () => {
+      const contact = await getPrivateContact(uid);
+      if (cancelled) return;
+      const p = contact?.phoneNumber || "";
+      setSavedPhone(p);
+      setPhone(p);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [uid]);
 
   const savePhone = async () => {
     setPhoneSaving(true);
     try {
       await updateProfile(uid, { phoneNumber: phone.trim() });
+      setSavedPhone(phone.trim());
       setEditingPhone(false);
       onToast("Phone number updated");
     } catch (e) {
@@ -73,13 +92,13 @@ export default function AccountSettings({ user, userDoc, uid, onToast }) {
               </button>
               <button
                 style={styles.phoneCancelBtn}
-                onClick={() => { setEditingPhone(false); setPhone(userDoc?.phoneNumber || ""); }}
+                onClick={() => { setEditingPhone(false); setPhone(savedPhone); }}
               >
                 Cancel
               </button>
             </div>
           ) : (
-            <div style={styles.rowValue}>{userDoc?.phoneNumber || "Not set"}</div>
+            <div style={styles.rowValue}>{savedPhone || "Not set"}</div>
           )}
         </div>
         {!editingPhone && (

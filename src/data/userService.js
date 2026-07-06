@@ -214,11 +214,37 @@ export async function updateProfile(uid, { displayName, bio, photoURL, coverPhot
     patch.defaultRadiusMi = typeof defaultRadiusMi === "number" ? defaultRadiusMi : null;
   }
 
-  if (phoneNumber !== undefined) {
-    patch.phoneNumber = phoneNumber ? String(phoneNumber).trim() : null;
-  }
+  // phoneNumber is contact PII — it goes to the owner-only
+  // users/{uid}/private/contact doc, never the world-readable profile doc
+  // (C4). The shared Firestore rules no longer allow phoneNumber on the
+  // users doc, so it's written separately below.
 
   await updateDoc(ref, patch);
+
+  if (phoneNumber !== undefined) {
+    const trimmed = phoneNumber ? String(phoneNumber).trim() : "";
+    await setDoc(
+      doc(db, "users", uid, "private", "contact"),
+      { phoneNumber: trimmed || null, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+  }
+}
+
+/* ----------------------------
+   Owner-only contact info
+   Reads users/{uid}/private/contact — the phoneNumber relocated off the
+   public profile (C4). Rules allow only the owner to read it. Returns {}
+   when absent or on error.
+----------------------------- */
+export async function getPrivateContact(uid) {
+  if (!uid) return {};
+  try {
+    const snap = await getDoc(doc(db, "users", uid, "private", "contact"));
+    return snap.exists() ? snap.data() || {} : {};
+  } catch {
+    return {};
+  }
 }
 
 /* ----------------------------
