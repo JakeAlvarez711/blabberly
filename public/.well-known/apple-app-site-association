@@ -3,8 +3,13 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["TEAM_ID.com.blabberly.mobile"],
-        "paths": ["/p/*", "/place/*", "/u/*"]
+        "appIDs": ["HTT65Q4485.com.blabberly.mobile"],
+        "components": [
+          { "/": "/p/*", "comment": "Post deep links" },
+          { "/": "/place/*", "comment": "Place deep links" },
+          { "/": "/u/*", "comment": "Profile deep links" },
+          { "/": "/list-invite/*", "comment": "Group list invite links" }
+        ]
       }
     ]
   }
