@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "blabbery-3010a"
+    "default": "blabberly-website",
+    "backend": "blabbery-3010a"
   }
 }
