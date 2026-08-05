@@ -3,12 +3,30 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["HTT65Q4485.com.blabberly.mobile"],
+        "appIDs": [
+          "HTT65Q4485.com.blabberly.mobile"
+        ],
         "components": [
-          { "/": "/p/*", "comment": "Post deep links" },
-          { "/": "/place/*", "comment": "Place deep links" },
-          { "/": "/u/*", "comment": "Profile deep links" },
-          { "/": "/list-invite/*", "comment": "Group list invite links" }
+          {
+            "/": "/p/*",
+            "comment": "Post deep links"
+          },
+          {
+            "/": "/place/*",
+            "comment": "Place deep links"
+          },
+          {
+            "/": "/u/*",
+            "comment": "Profile deep links"
+          },
+          {
+            "/": "/event/*",
+            "comment": "Event deep links"
+          },
+          {
+            "/": "/list-invite/*",
+            "comment": "Group list invite links"
+          }
         ]
       }
     ]

@@ -1,9 +1,14 @@
 {
+  "functions": [{ "source": "functions", "codebase": "og" }],
   "hosting": {
     "public": "build",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       { "source": "/list-invite/**", "destination": "/list-invite/index.html" },
+      { "source": "/place/**", "function": { "functionId": "ogMeta", "region": "us-central1" } },
+      { "source": "/p/**", "function": { "functionId": "ogMeta", "region": "us-central1" } },
+      { "source": "/u/**", "function": { "functionId": "ogMeta", "region": "us-central1" } },
+      { "source": "/event/**", "function": { "functionId": "ogMeta", "region": "us-central1" } },
       { "source": "**", "destination": "/index.html" }
     ],
     "headers": [
