@@ -1,0 +1,4 @@
+Contact: mailto:support@blabberly.com
+Preferred-Languages: en
+Canonical: https://blabberly.com/.well-known/security.txt
+Policy: https://blabberly.com/security
