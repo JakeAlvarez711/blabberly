@@ -4,6 +4,10 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       { "source": "/list-invite/**", "destination": "/list-invite/index.html" },
+      { "source": "/p/**", "run": { "serviceId": "sharepreview", "region": "us-central1" } },
+      { "source": "/place/**", "run": { "serviceId": "sharepreview", "region": "us-central1" } },
+      { "source": "/event/**", "run": { "serviceId": "sharepreview", "region": "us-central1" } },
+      { "source": "/u/**", "run": { "serviceId": "sharepreview", "region": "us-central1" } },
       { "source": "**", "destination": "/index.html" }
     ],
     "headers": [
