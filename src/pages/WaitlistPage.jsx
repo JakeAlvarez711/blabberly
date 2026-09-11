@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import logo from "../assets/logo.png.png";
@@ -258,10 +257,6 @@ export default function WaitlistPage() {
         <a href="mailto:support@blabberly.com" className="bb-footer-link">
           support@blabberly.com
         </a>
-        <span style={styles.footerSep}>·</span>
-        <Link to="/auth" className="bb-footer-link">
-          Have an account? Sign in
-        </Link>
       </footer>
     </div>
   );

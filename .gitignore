@@ -21,3 +21,12 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Secrets — .env must never be committed (regression: this was
+# claimed fixed in the July hardening pass but was not present).
+.env
+.env.*
+!.env.example
+
+# Firebase deploy cache
+.firebase/
