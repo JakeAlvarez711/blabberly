@@ -1,6 +1,6 @@
 # Terms of Service
 
-Effective: September 7, 2026 · Version 3 · Replaces the version dated August 24, 2026
+Effective: September 11, 2026 · Version 3 · Replaces the version dated August 24, 2026
 
 > **In short:** These are the rules for using Blabberly. You keep ownership of what you post, you must be at least 13, you are responsible for how you use restaurant information and for your own safety when you meet up or travel, and during the beta things can change or break.
 
@@ -118,7 +118,7 @@ We respect copyright and expect users to do the same. If you believe Content on 
 
 [PLACEHOLDER: DMCA agent name]
 Blabberly LLC
-[PLACEHOLDER: mailing address]
+c/o Registered Agent, 2108 N St Ste N, Sacramento, CA 95816
 [PLACEHOLDER: phone number]
 [support@blabberly.com](mailto:support@blabberly.com)
 
@@ -147,7 +147,7 @@ These Terms are between you and Blabberly, not Apple. Apple is not responsible f
 - **Intellectual property.** If a third party claims the App infringes its intellectual property rights, Blabberly, not Apple, is responsible for investigating, defending, settling, and discharging the claim.
 - **Legal compliance.** You represent that you are not located in a country subject to a US government embargo or designated by the US government as a "terrorist supporting" country, and that you are not on any US government list of prohibited or restricted parties.
 - **Third-party beneficiary.** Apple and its subsidiaries are third-party beneficiaries of these Terms and may enforce them against you.
-- Blabberly's name and address for questions, complaints, or claims: Blabberly LLC, [PLACEHOLDER: mailing address], [support@blabberly.com](mailto:support@blabberly.com).
+- Blabberly's name and address for questions, complaints, or claims: Blabberly LLC, c/o Registered Agent, 2108 N St Ste N, Sacramento, CA 95816, [support@blabberly.com](mailto:support@blabberly.com).
 
 ## 17. Ending your account
 
@@ -197,5 +197,5 @@ We may change these Terms. When we do, we will post the new version here with a 
 ## 25. Contact
 
 Blabberly LLC
-[PLACEHOLDER: mailing address]
+c/o Registered Agent, 2108 N St Ste N, Sacramento, CA 95816
 [support@blabberly.com](mailto:support@blabberly.com)

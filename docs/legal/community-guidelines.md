@@ -1,6 +1,6 @@
 # Community Guidelines
 
-Effective: September 7, 2026 · Version 2 · Replaces the version dated August 24, 2026
+Effective: September 11, 2026 · Version 2 · Replaces the version dated August 24, 2026
 
 > **In short:** Post real food from places you actually went, be decent to people, and keep other people's private lives out of it. If you see something that breaks these rules, report it and we will look.
 

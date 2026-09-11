@@ -1,6 +1,6 @@
 # Disclosures
 
-Effective: September 7, 2026 · Version 1
+Effective: September 11, 2026 · Version 1
 
 > **In short:** Some of the text in Blabberly is written by AI, some place details come from Google and from restaurants' own websites, the app is in beta, and nothing in it is paid placement today. This page says exactly which is which and how to tell us when something is wrong.
 

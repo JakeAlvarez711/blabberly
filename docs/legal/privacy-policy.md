@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Effective: September 7, 2026 · Version 3 · Replaces the version dated August 24, 2026
+Effective: September 11, 2026 · Version 3 · Replaces the version dated August 24, 2026
 
 > **In short:** Blabberly collects what it needs to run a social food app: your account, what you post, your taste preferences, the location you choose to share while using the app, and how you use it. We do not sell your information or use advertising trackers, and most of what you post is public, so please read the "Who can see what" section below.
 
@@ -214,5 +214,5 @@ When we change this policy we post the new version here with a new date and vers
 ## 14. Contact
 
 Blabberly LLC
-[PLACEHOLDER: mailing address]
+c/o Registered Agent, 2108 N St Ste N, Sacramento, CA 95816
 [support@blabberly.com](mailto:support@blabberly.com)
