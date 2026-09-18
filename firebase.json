@@ -8,6 +8,7 @@
       { "source": "/place/**", "run": { "serviceId": "sharepreview", "region": "us-central1" } },
       { "source": "/event/**", "run": { "serviceId": "sharepreview", "region": "us-central1" } },
       { "source": "/u/**", "run": { "serviceId": "sharepreview", "region": "us-central1" } },
+      { "source": "/list/**", "run": { "serviceId": "sharepreview", "region": "us-central1" } },
       { "source": "**", "destination": "/index.html" }
     ],
     "headers": [

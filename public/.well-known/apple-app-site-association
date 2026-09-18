@@ -9,7 +9,8 @@
           { "/": "/place/*", "comment": "Place deep links" },
           { "/": "/u/*", "comment": "Profile deep links" },
           { "/": "/event/*", "comment": "Event deep links" },
-          { "/": "/list-invite/*", "comment": "Group list invite links" }
+          { "/": "/list-invite/*", "comment": "Group list invite links" },
+          { "/": "/list/*", "comment": "Public list links" }
         ]
       }
     ]
